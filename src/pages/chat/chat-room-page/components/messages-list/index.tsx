@@ -1,9 +1,11 @@
-import { forwardRef, useMemo } from "react";
+import { forwardRef } from "react";
 import { useParams } from "react-router-dom";
 
 import Icon from "common/components/icons";
 import useScrollToBottom from "./hooks/useScrollToBottom";
-import { getMessages, Message } from "./data/get-messages";
+import { Message } from "./data/get-messages";
+import { useMessaging } from "../../../hooks/useMessaging";
+import { useChatContext } from "../../../context/chat";
 import {
   ChatMessage,
   ChatMessageFiller,
@@ -24,10 +26,14 @@ export default function MessagesList(props: MessagesListProps) {
   const { onShowBottomIcon, shouldScrollToBottom } = props;
 
   const params = useParams();
-  const messages = useMemo(() => {
-    return getMessages();
-    // eslint-disable-next-line
-  }, [params.id]);
+  const { user, activeChat } = useChatContext();
+  
+  // Use real messaging hook instead of static data
+  const { messages, isLoading, error, isConnected } = useMessaging(
+    user.id, 
+    activeChat?.id || ""
+  );
+
   const { containerRef, lastMessageRef } = useScrollToBottom(
     onShowBottomIcon,
     shouldScrollToBottom,
@@ -41,17 +47,46 @@ export default function MessagesList(props: MessagesListProps) {
         Messages are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read
         or listen to them. Click to learn more.
       </EncryptionMessage>
+      
+      {/* Connection Status */}
+      {!isConnected && (
+        <DateWrapper>
+          <Date style={{color: '#ff4444'}}>🔴 Backend Disconnected</Date>
+        </DateWrapper>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <DateWrapper>
+          <Date style={{color: '#ff4444'}}>❌ Error: {error}</Date>
+        </DateWrapper>
+      )}
+      
+      {/* Loading State */}
+      {isLoading && (
+        <DateWrapper>
+          <Date>⏳ Loading messages...</Date>
+        </DateWrapper>
+      )}
+      
       <DateWrapper>
         <Date> TODAY </Date>
       </DateWrapper>
+      
       <MessageGroup>
-        {messages.map((message, i) => {
-          if (i === messages.length - 1) {
-            return <SingleMessage key={message.id} message={message} ref={lastMessageRef} />;
-          } else {
-            return <SingleMessage key={message.id} message={message} />;
-          }
-        })}
+        {messages.length === 0 && !isLoading ? (
+          <DateWrapper>
+            <Date>No messages yet. Start the conversation!</Date>
+          </DateWrapper>
+        ) : (
+          messages.map((message, i) => {
+            if (i === messages.length - 1) {
+              return <SingleMessage key={message.id} message={message} ref={lastMessageRef} />;
+            } else {
+              return <SingleMessage key={message.id} message={message} />;
+            }
+          })
+        )}
       </MessageGroup>
     </Container>
   );

@@ -3,6 +3,7 @@ import { inbox } from "../data/inbox";
 import { Inbox } from "common/types/common.type";
 
 type User = {
+  id: string;
   name: string;
   image: string;
 };
@@ -15,7 +16,11 @@ type ChatContextProp = {
 };
 
 const initialValue: ChatContextProp = {
-  user: { name: "Jazim Abbas", image: "/assets/images/girl.jpeg" },
+  user: { 
+    id: "current_user_123", 
+    name: "Jazim Abbas", 
+    image: "/assets/images/girl.jpeg" 
+  },
   inbox,
   onChangeChat() {
     throw new Error();
