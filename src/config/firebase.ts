@@ -1,55 +1,54 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, PhoneAuthProvider, RecaptchaVerifier } from 'firebase/auth';
+import { environment } from './environment';
 
-// Firebase configuration for messagingapp-844da
+// Initialize Firebase with environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyAtqltJM5i3tVE312iZCqTJO5OQ_qVOf2E",
-  authDomain: "messagingapp-844da.firebaseapp.com",
-  projectId: "messagingapp-844da",
-  storageBucket: "messagingapp-844da.firebasestorage.app",
-  messagingSenderId: "950457344052",
-  appId: "1:950457344052:web:0628c5d6fe8618ccfcaa61",
-  measurementId: "G-JDK5SJQ55R"
+  apiKey: environment.firebase.apiKey || "AIzaSyA96ilJYYK5O5he3iLI89buf6RXCXtcMP4",
+  authDomain: environment.firebase.authDomain || "chatting-92351.firebaseapp.com",
+  projectId: environment.firebase.projectId || "chatting-92351",
+  storageBucket: environment.firebase.storageBucket || "chatting-92351.firebasestorage.app",
+  messagingSenderId: environment.firebase.messagingSenderId || "667497787507",
+  appId: environment.firebase.appId || "1:667497787507:web:a411e61ee5a5ccfc78ba06",
+  measurementId: environment.firebase.measurementId || "G-QMY5XWRW6J"
 };
 
-// Initialize Firebase
+console.log('🔧 Firebase Config Status:', {
+  apiKey: firebaseConfig.apiKey ? '✅ Set' : '❌ Missing',
+  authDomain: firebaseConfig.authDomain ? '✅ Set' : '❌ Missing',
+  projectId: firebaseConfig.projectId ? '✅ Set' : '❌ Missing',
+  appId: firebaseConfig.appId ? '✅ Set' : '❌ Missing',
+  usingEnvVars: environment.firebase.apiKey ? '✅ Environment Variables' : '❌ Hardcoded Values'
+});
+
+// Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication
+// Initialize Firebase Auth
 export const auth = getAuth(app);
 
-// Initialize Phone Auth Provider
-export const phoneAuthProvider = new PhoneAuthProvider(auth);
-
-// Initialize Recaptcha Verifier (only when needed)
-export const createRecaptchaVerifier = () => {
-  if (typeof window !== 'undefined') {
-    // Clear any existing reCAPTCHA
-    const existingRecaptcha = document.querySelector('#recaptcha-container');
-    if (existingRecaptcha) {
-      existingRecaptcha.innerHTML = '';
-    }
-    
-    try {
-      // Use reCAPTCHA v2 invisible
-      return new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response: any) => {
-          console.log('reCAPTCHA v2 solved successfully');
-        },
-        'expired-callback': () => {
-          console.log('reCAPTCHA v2 expired');
-        },
-        'error-callback': () => {
-          console.error('reCAPTCHA v2 error');
-        }
-      });
-    } catch (error) {
-      console.error('Error creating reCAPTCHA verifier:', error);
-      return null;
-    }
+// Create reCAPTCHA verifier
+export const createRecaptchaVerifier = (containerId: string) => {
+  try {
+    console.log('🔧 Creating reCAPTCHA verifier for container:', containerId);
+    const verifier = new RecaptchaVerifier(auth, containerId, {
+      size: 'invisible',
+      callback: () => {
+        console.log('✅ reCAPTCHA solved');
+      },
+      'expired-callback': () => {
+        console.log('❌ reCAPTCHA expired');
+      }
+    });
+    console.log('✅ reCAPTCHA verifier created successfully');
+    return verifier;
+  } catch (error) {
+    console.error('❌ Error creating reCAPTCHA verifier:', error);
+    throw error;
   }
-  return null;
 };
 
-export default app; 
+// Phone Auth Provider
+export const phoneAuthProvider = new PhoneAuthProvider(auth);
+
+export default app;

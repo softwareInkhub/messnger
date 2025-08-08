@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
+
+// Backend user interface
+interface BackendUser {
+  uid: string;
+  phoneNumber: string;
+  username: string;
+  isPhoneVerified: boolean;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: BackendUser | null;
   loading: boolean;
   logout: () => Promise<void>;
+  login: (userData: BackendUser) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,23 +30,43 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<BackendUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
-      setUser(user);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    // Check for stored user data on app load
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser) as BackendUser;
+        console.log('🔐 Found stored user data:', userData);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('user');
+      }
+    }
+    setLoading(false);
   }, []);
+
+  const login = async (userData: BackendUser) => {
+    try {
+      console.log('🔐 Logging in user:', userData);
+      setUser(userData);
+      // Store user data in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
 
   const logout = async () => {
     try {
-      await signOut(auth);
       setUser(null);
+      // Clear user data from localStorage
+      localStorage.removeItem('user');
+      console.log('🔐 User logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -49,6 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     logout,
+    login,
   };
 
   return (

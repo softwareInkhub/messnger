@@ -42,7 +42,7 @@ export default function Header(props: HeaderProps) {
       <ProfileWrapper onClick={onProfileClick}>
         <Name>{title}</Name>
         {subTitle && <Subtitle>{subTitle}</Subtitle>}
-        {user && <Subtitle>Logged in as: {user.displayName || user.email}</Subtitle>}
+        {user && <Subtitle>Logged in as: {user.username}</Subtitle>}
       </ProfileWrapper>
       <Actions>
         <Action onClick={onSearchClick}>

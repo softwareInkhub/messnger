@@ -1,5 +1,9 @@
-// API Configuration - Using local backend server
-const API_BASE_URL = 'http://localhost:3001'; // Local backend server
+import { environment } from '../config/environment';
+import { API_CONSTANTS, ERROR_MESSAGES } from '../utils/constants';
+import { Logger } from '../utils/logger';
+
+// API Configuration - Using environment variables
+const API_BASE_URL = environment.apiBaseUrl;
 
 // API Response Types
 export interface ApiResponse<T = any> {
@@ -46,7 +50,7 @@ class ApiService {
         ...options,
       };
 
-      console.log(`🚀 API Request: ${config.method || 'GET'} ${url}`, config.body ? JSON.parse(config.body as string) : {});
+      Logger.logApiRequest(config.method || 'GET', url, config.body ? JSON.parse(config.body as string) : {});
 
       const response = await fetch(url, config);
       const data = await response.json();
@@ -55,17 +59,17 @@ class ApiService {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
-      console.log(`✅ API Response:`, data);
+      Logger.logApiResponse(config.method || 'GET', url, response.status, data);
       return data;
     } catch (error) {
-      console.error(`❌ API Error:`, error);
+      Logger.logApiError(options.method || 'GET', `${this.baseURL}${endpoint}`, error);
       throw error;
     }
   }
 
   // Send a message to backend
   async sendMessage(messageData: SendMessageRequest): Promise<ApiResponse<MessageData>> {
-    return this.request<MessageData>('/sendMessage', {
+    return this.request<MessageData>(API_CONSTANTS.ENDPOINTS.SEND_MESSAGE, {
       method: 'POST',
       body: JSON.stringify(messageData),
     });
@@ -73,7 +77,7 @@ class ApiService {
 
   // Get all messages from backend
   async getMessages(limit: number = 50): Promise<ApiResponse<MessageData[]>> {
-    return this.request<MessageData[]>(`/getMessages?limit=${limit}`);
+    return this.request<MessageData[]>(`${API_CONSTANTS.ENDPOINTS.GET_MESSAGES}?limit=${limit}`);
   }
 
   // Get messages for a specific user conversation
@@ -102,10 +106,10 @@ class ApiService {
   async testConnection(): Promise<boolean> {
     try {
       await this.getMessages(1);
-      console.log('🟢 Backend connection successful');
+      Logger.info('🟢 Backend connection successful');
       return true;
     } catch (error) {
-      console.error('🔴 Backend connection failed:', error);
+      Logger.error('🔴 Backend connection failed:', error);
       return false;
     }
   }
